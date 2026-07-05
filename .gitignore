@@ -6,6 +6,9 @@ node_modules/
 npm-debug.log*
 yarn-error.log*
 
+# Claude Code local settings (machine-specific permissions/state)
+.claude/settings.local.json
+
 # Env / secrets
 .env
 .env.*

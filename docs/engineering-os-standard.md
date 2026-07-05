@@ -153,13 +153,19 @@ non-trivial branch.
 5. **Budget is law** (EF-06). Over-budget always-loaded files fail CI.
 
 ### 6.2 "No role overlap" — MECHANICAL first, prose second
-Three enforcement layers:
-1. **Tool allowlist** — read-only roles omit `Write`/`Edit`; they *cannot* edit. Source of truth:
-   `.claude/role-matrix.json` (`readOnly`, `writeGlobs`, `disallowed`).
-2. **Write-scope hook** (`guard-write-scope.sh`, PreToolUse) — blocks writes to protected infra (standards,
-   templates, scripts, `.claude`).
-3. **Read-only hook** (`enforce-readonly.sh`, PreToolUse on Bash) — blocks mutating shell for roles run with
-   `EOS_ROLE_READONLY=1`.
+Enforcement layers (validated against Claude Code 2.1.x — see Appendix):
+1. **Tool allowlist (`tools:` in the agent file, BARE names)** — read-only roles omit `Write`/`Edit`; they
+   *cannot* edit. The coarse capability wall. Path/arg scoping is NOT expressible here.
+2. **Per-role write-scope hook** (`guard-write-scope.sh`, PreToolUse) — constrains **identified roles only**;
+   the human operator (main thread, no matrix role) is trusted and unrestricted, so the org can be maintained
+   freely. When a role is acting (payload `subagent_type`/`agent_type`, or `EOS_ROLE`), it enforces that
+   role's `writeGlobs` from `.claude/role-matrix.json`: a builder cannot write outside its domain, read-only
+   roles cannot write at all, and protected infra (standards/templates/scripts/`.claude`) is never
+   overwritten. Denies with the canonical `hookSpecificOutput.permissionDecision:"deny"`.
+3. **Read-only shell hook** (`enforce-readonly.sh`, PreToolUse on Bash) — blocks mutating shell for roles run
+   with `EOS_ROLE_READONLY=1`.
+4. **(Optional) `permissions.deny`** in project `settings.json` — rule syntax (`Write(src/**)`) for
+   universally-forbidden paths. This — NOT agent frontmatter — is where Claude Code path-scoping belongs.
 
 > **Honest limit (graft from A):** tool walls separate reviewers from builders, but they **cannot separate two
 > builders who edit the same file** (backend vs database on `prisma/schema.prisma`; a11y/seo/perf/animation
@@ -237,11 +243,23 @@ role is chain-linted and budget-checked the moment it lands.
 
 ---
 
-## Appendix — Known validation items
-1. **Frontmatter/tool-scoping syntax** (`disallowedTools: Write(src/**)`, `Agent(<list>)`) must be verified
-   against the installed Claude Code version before authoring all 19 roles. Core fields (`name`, `description`,
-   `tools`, `model`, `hooks`) are solid; glob-scoped denials are the uncertain part — hooks are the reliable
-   path-scoped fallback.
-2. **Hook stdin schema + block convention** (exit-2 vs JSON `deny`) — validate per `.claude/hooks/README.md`.
+## Appendix — Validation results (validated 2026-07-04)
+Verified empirically against the installed binary (running **2.1.197**; `2.1.201` native binary + its
+`claude-code-settings.schema.json`):
+1. **Hook settings structure — CONFIRMED.** `hooks.<Event> = [{matcher, hooks:[{type:"command", command}]}]`;
+   `$CLAUDE_PROJECT_DIR` is substituted. Events include `PreToolUse`, `PostToolUse`, `Stop`, `SubagentStop`, …
+2. **Hook I/O — CONFIRMED.** stdin payload carries `tool_name`, `tool_input` (`file_path`/`command`),
+   `session_id`, `cwd`, and `subagent_type`/`agent_type`. Canonical deny = stdout JSON
+   `hookSpecificOutput.permissionDecision:"deny"` (+`permissionDecisionReason`) for PreToolUse, and
+   `{"decision":"block","reason"}` for Stop; exit 2 also blocks. Hooks emit the canonical JSON.
+3. **Agent frontmatter tool-scoping — CORRECTED.** `tools:` takes **bare tool names**; path/arg scoping
+   (`Write(src/**)`) is permission-rule syntax valid only in `permissions.deny` / hook `if`, **not** in agent
+   frontmatter. The no-op `disallowedTools: Write(...)` was removed from roles + template; per-role write-globs
+   are now enforced mechanically by `guard-write-scope.sh` via `role-matrix.json`.
+
+Reliable frontmatter keys: `name`, `description`, `tools`, `model` (+ optional `permissionMode`, `maxTurns`,
+`color`). Hooks are activated in `settings.json`, not agent frontmatter.
+Residual manual check: run the 60-second smoke test in `.claude/hooks/README.md` in a fresh interactive
+session to confirm hooks fire end-to-end on this machine (a mid-session settings change is not hot-reloaded).
 
 *End of standard. `scripts/*.mjs` are its enforcement; `Knowledge/*` are its single source of truth.*

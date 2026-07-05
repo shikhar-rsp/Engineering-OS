@@ -4,15 +4,14 @@ description: >
   Use FIRST for any new PRD, feature request, or cross-team task, and whenever two roles
   dispute ownership or a task spans multiple domains. Routes work to PM, Architect, Leads, and
   reviewers and arbitrates overlap. Does NOT design, code, or review itself (→ Architect / Leads / reviewers).
-tools: Read, Grep, Glob, Bash, Agent, Write, Edit
-disallowedTools: Write(src/**), Edit(src/**)
+tools: Read, Grep, Glob, Bash, Task, Agent, Write, Edit
+# Subagent-spawning tool is `Task` (Claude Code CLI / VS Code) or `Agent` (desktop app) — both listed for portability.
+# `tools` takes BARE names only. The EM's write-scope (projects/**/plan|escalations) is NOT
+# expressed here — it is enforced mechanically by .claude/hooks/guard-write-scope.sh via
+# .claude/role-matrix.json. Hooks are activated globally in .claude/settings.json.
 model: opus
 permissionMode: plan
 maxTurns: 40
-memory: project
-hooks:
-  PreToolUse: [ "hooks/guard-write-scope.sh", "hooks/enforce-readonly.sh" ]
-  Stop:       [ "hooks/require-selfcheck.sh" ]
 color: blue
 ---
 

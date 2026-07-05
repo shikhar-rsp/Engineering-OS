@@ -8,17 +8,17 @@
 name: <role-slug>                       # required. lowercase. delegation key.
 description: >                          # required. ≤60 words. trigger + explicit NOT-domain → owner.
   Use for <in-domain trigger>. Do NOT use for <adjacent domain> (that is <other-role>).
-tools: <tight allowlist>                # THE mechanical boundary. read-only roles OMIT Write/Edit.
-disallowedTools: <explicit denials>     # belt-and-suspenders; e.g. Write(src/**)
+tools: <BARE tool names only>           # THE coarse boundary. read-only roles OMIT Write/Edit.
+                                        # Coordinators that spawn other roles need `Task` (CLI) / `Agent` (desktop).
+                                        # Agent `tools` does NOT accept path/arg scoping like
+                                        # Write(src/**) — that is enforced by role-matrix.json +
+                                        # hooks/guard-write-scope.sh (and/or settings.json permissions.deny).
 model: inherit                          # inherit | opus | sonnet | haiku
-permissionMode: default                 # default | plan | acceptEdits
-maxTurns: 30
-# skills: [<preload ONLY if the role is useless without it — costs tokens every turn>]
-hooks:
-  PreToolUse: [ "hooks/guard-write-scope.sh", "hooks/enforce-readonly.sh" ]
-  Stop:       [ "hooks/require-selfcheck.sh" ]
-memory: project
+permissionMode: default                 # optional: default | plan | acceptEdits
+maxTurns: 30                            # optional
 color: <ui-color>
+# Hooks are activated globally in .claude/settings.json — NOT per-agent frontmatter.
+# Per-role write-globs live in .claude/role-matrix.json (add an entry before authoring).
 ---
 
 # <Role Name>

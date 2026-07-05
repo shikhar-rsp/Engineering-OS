@@ -25,9 +25,9 @@ node scripts/build-role-doc.mjs [role] # merge a role's body + assets → docs/r
 ```
 
 ## Status
-- ✅ v1.0 foundation: standard, templates, Knowledge (workflow + 5 seed standards), role matrix, linters, hooks.
-- ✅ Role #1: `engineering-manager`.
-- ⏭ Next: `staff-architect`, then `product-manager`, then `frontend-lead` + `backend-lead`; then flesh out the
-  seed Knowledge standards; then a real PRD→build spine before adding the 12 specialists.
+- ✅ v1.0 foundation: standard, templates, Knowledge (workflow + 5 seed standards), role matrix, linters, hooks (live).
+- ✅ Roles: all 7 lead/orchestrator roles — `engineering-manager`, `staff-architect`, `product-manager`, `frontend-lead`, `backend-lead`, `uiux-lead`, `ai-platform-lead` (7 / 19).
+- ⏭ Test the leads end-to-end on a real project; then the 12 specialists; flesh out the seed Knowledge standards.
+- Tooling: `node scripts/eos-install.mjs <project>` to deploy; `node scripts/simulate-hooks.mjs` to test hooks.
 
 See [`docs/engineering-os-standard.md` §10](docs/engineering-os-standard.md) for the full build order.
